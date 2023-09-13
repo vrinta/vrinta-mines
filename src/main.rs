@@ -1,3 +1,4 @@
+use rand::Rng;
 use std::ptr;
 
 #[derive(Debug, Clone)]
@@ -15,9 +16,13 @@ impl Cell {
             value,
         }
     }
+
+    pub fn is_bomb(&self) -> bool {
+        self.value == CellKind::Bomb
+    }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum CellKind {
     Empty,
     Bomb,
@@ -36,11 +41,15 @@ impl Board {
         if side_size != side_size.trunc() {
             panic!("Did not provide square board size (e.g. 4, 16, 32)");
         }
-        return Board {
+        let empty_vec = Board::init_empty_vector(size);
+        let mut board = Board {
             size,
-            elements: vec![],
+            elements: empty_vec,
             side_size: side_size as u16,
         };
+        let board_ref: &mut Board = &mut board;
+        board_ref.insert_bombs(0.3);
+        return board;
     }
 
     fn init_empty_vector(size: u16) -> Vec<Cell> {
@@ -65,6 +74,26 @@ impl Board {
         };
         let index = Board::from_coordinates_to_vector_index(self.side_size, x, y);
         self.elements.insert(index, c);
+    }
+
+    fn insert_bombs(&mut self, bombs_percentage: f32) {
+        let size = self.size;
+        let target_number_of_bombs_rounded: u16 =
+            Board::target_number_of_bombs(size, bombs_percentage);
+        let mut random_range = rand::thread_rng();
+        let mut current_number_of_bombs = 0;
+        while current_number_of_bombs < target_number_of_bombs_rounded {
+            let random_index_with_bomb: usize = to_usize(random_range.gen_range(0..size));
+            let current_cell: &mut Cell = self.elements.get_mut(random_index_with_bomb).unwrap();
+            if !current_cell.is_bomb() {
+                current_cell.value = CellKind::Bomb;
+                current_number_of_bombs += 1;
+            }
+        }
+    }
+    fn target_number_of_bombs(size: u16, bombs_percentage: f32) -> u16 {
+        let target_number_of_bombs: f32 = size as f32 * bombs_percentage;
+        target_number_of_bombs.round() as u16
     }
 
     fn from_coordinates_to_vector_index(side_size: u16, x: u16, y: u16) -> usize {
@@ -101,10 +130,10 @@ fn main() {
     let mut b = Board::new(9);
     println!("{:?}", ptr::addr_of!(b));
     let mut b_ref = &mut b;
-    b_ref.set_element(0, 0, CellKind::Bomb);
-    println!("{:?}", ptr::addr_of!(b_ref));
-    b_ref.set_element(0, 1, CellKind::Number(1));
-    println!("{:?}", ptr::addr_of!(b_ref));
+    // b_ref.set_element(0, 0, CellKind::Bomb);
+    // println!("{:?}", ptr::addr_of!(b_ref));
+    // b_ref.set_element(0, 1, CellKind::Number(1));
+    // println!("{:?}", ptr::addr_of!(b_ref));
 
     println!("{:?}", b_ref);
     println!("{:?}", b);
