@@ -1,3 +1,4 @@
+use crate::CellKind::Number;
 use rand::Rng;
 use std::ptr;
 
@@ -20,6 +21,24 @@ impl Cell {
     pub fn is_bomb(&self) -> bool {
         self.value == CellKind::Bomb
     }
+
+    pub fn is_number(&self) -> bool {
+        match self.value {
+            CellKind::Number(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn increment_number(&mut self) {
+        match self.value {
+            CellKind::Empty => self.value = Number(1),
+            Number(num) => {
+                let new_value = num + 1;
+                self.value = Number(new_value);
+            }
+            _ => {}
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -28,6 +47,7 @@ enum CellKind {
     Bomb,
     Number(u8),
 }
+
 #[derive(Debug)]
 struct Board {
     size: u16,
@@ -74,6 +94,11 @@ impl Board {
         };
         let index = Board::from_coordinates_to_vector_index(self.side_size, x, y);
         self.elements.insert(index, c);
+    }
+
+    pub fn get_element(&mut self, x: u16, y: u16) -> &Cell {
+        let index = Board::from_coordinates_to_vector_index(self.side_size, x, y);
+        self.elements.get(index).unwrap()
     }
 
     fn insert_bombs(&mut self, bombs_percentage: f32) {
@@ -127,14 +152,38 @@ fn main() {
         value: CellKind::Empty,
     };
 
-    let mut b = Board::new(9);
+    let mut b = Board::new(25);
     println!("{:?}", ptr::addr_of!(b));
+    println!("{:?}", b);
     let mut b_ref = &mut b;
     // b_ref.set_element(0, 0, CellKind::Bomb);
     // println!("{:?}", ptr::addr_of!(b_ref));
     // b_ref.set_element(0, 1, CellKind::Number(1));
     // println!("{:?}", ptr::addr_of!(b_ref));
 
+    // let mut bboard_it = &mut b_ref.elements;
+    //
+    // let mut bombs: u16 = 0;
+    // for c in bboard_it{
+    //     if (c.is_bomb()) {
+    //         bombs += 1;
+    //     }
+    // }
+
+    // println!("{:?}", bombs);
+
     println!("{:?}", b_ref);
-    println!("{:?}", b);
+
+    for x in 0..b_ref.side_size {
+        for y in 0..b_ref.side_size {
+            let mut c = b_ref.get_element(x, y).clone();
+            if (c.is_bomb()) {
+                println!("{:?}", c);
+            } else if (c.value == CellKind::Empty) {
+                c.increment_number();
+                c.increment_number();
+            }
+            println!("{:?}", c);
+        }
+    }
 }
